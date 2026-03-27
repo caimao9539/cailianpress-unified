@@ -1,63 +1,70 @@
-# cailianpress-unified
+# 财联社统一技能 / cailianpress-unified
 
-A unified Cailian Press (CLS / 财联社) data skill for OpenClaw.
+统一的财联社（CLS / 财联社）数据技能，为 OpenClaw 与其他可复用脚本提供单一、稳定、可审计的数据访问入口。
 
-This skill provides a single, canonical entrypoint for CLS telegraph data so other skills and scripts do not need to call CLS directly. It standardizes query behavior, output schema, red/highlight logic, and fallback behavior.
+A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a single canonical entrypoint for CLS telegraph data so other skills and scripts do not need to call CLS directly.
 
-## Features
+## 中文说明
 
-- Unified access to CLS telegraph data
-- Canonical red/highlight detection based on `level`
-- Heat filtering based on `reading_num`
-- Stable normalized output schema for downstream consumers
-- CLI interface for terminal and skill-to-skill calls
-- Page fallback when the primary NodeAPI path fails
-- GitHub-friendly documentation and structure
+### 这是什么
 
-## Why this exists
+这是一个面向 OpenClaw / AgentSkill 场景设计的财联社统一技能，目标是把分散的财联社接口调用统一收口成一个可复用入口，避免不同脚本、任务、报表各自调用不同财联社接口而导致：
 
-In many workspaces, CLS-related logic grows organically and becomes fragmented across:
-- direct `nodeapi/telegraphList` calls
-- page scraping against `cls.cn/telegraph`
-- parsing front-end state blobs such as `__NEXT_DATA__`
-- local red-message JSON snapshots
-- local formatted push files
-- hot-ranking caches from other systems
+- 电报口径不一致
+- 加红、热度、普通电报混用
+- 同一请求多次返回结果不同
+- 下游技能难以稳定复用
 
-That creates consistency problems:
-- same user request, different answer depending on which path was used
-- “red” vs “important” vs “hot” mixed together
-- no single source of truth
-- difficult downstream reuse by other skills
+### 当前能力（V1）
 
-This skill fixes that by defining one canonical contract.
+- 普通电报查询
+- 加红电报查询
+- 热度电报查询
+- article 详情基础补全
+- 页面兜底抓取
+- 统一 JSON / Text / Markdown 输出
 
-## V1 canonical design
+### 统一规则
 
-### Primary source
-- `https://www.cls.cn/nodeapi/telegraphList`
+- `level in {"A", "B"}` → 加红
+- `level == "C"` → 普通
+- `reading_num` → 热度/阅读量
+- `ctime` → 发布时间戳
+- `shareurl` → 财联社文章分享链接
 
-### Secondary source
-- `https://api3.cls.cn/share/article/{id}`
+### 主数据源
 
-### Fallback source
-- `https://www.cls.cn/telegraph`
+- 主源：`https://www.cls.cn/nodeapi/telegraphList`
+- 详情：`https://api3.cls.cn/share/article/{id}`
+- 兜底：`https://www.cls.cn/telegraph`
 
-### Canonical rules
-- `level in {"A", "B"}` → red/highlighted
-- `level == "C"` → normal
-- `reading_num` → heat / reading count
-- `ctime` → publish timestamp
-- `shareurl` → article share URL
+### 适用场景
 
-## Project structure
+适合以下请求或下游技能调用：
+- 财联社过去 1 小时电报
+- 财联社过去 24 小时加红电报
+- 财联社热度前 10
+- 财联社文章详情
+- 任何依赖财联社电报流的晨报 / 盘中简报 / 快讯聚合
+
+### 快速使用
+
+```bash
+python3 skills/cailianpress-unified/scripts/cls_query.py telegraph --hours 1
+python3 skills/cailianpress-unified/scripts/cls_query.py red --hours 24 --format text
+python3 skills/cailianpress-unified/scripts/cls_query.py hot --hours 1 --min-reading 10000 --format markdown
+python3 skills/cailianpress-unified/scripts/cls_query.py article --id 2326490 --format text
+```
+
+### 目录结构
 
 ```text
 skills/cailianpress-unified/
-├── .gitignore
-├── CHANGELOG.md
 ├── README.md
 ├── SKILL.md
+├── CHANGELOG.md
+├── LICENSE
+├── requirements.txt
 ├── docs/
 │   └── api_contract.md
 ├── scripts/
@@ -74,52 +81,69 @@ skills/cailianpress-unified/
 │   └── models/
 │       └── schemas.py
 └── tests/
-    ├── test_schemas.py
-    └── test_service_filters.py
 ```
 
-## Requirements
+### 已知限制
 
-- Python 3.10+
-- `requests`
-- Optional for tests: `pytest`
+- V1 重点解决电报流统一，不是完整财联社内容平台 SDK
+- `article` 详情解析目前基于 HTML 提取，后续还可继续增强
+- `telegraphList` 当前实现仍以接口返回窗口为主，24 小时真正全量历史能力还可继续增强
+- 某些财联社电报上游本身可能没有标题
 
-## Usage
+### 测试
 
-### Raw telegraph items
+如果环境里安装了 `pytest`：
+
+```bash
+cd skills/cailianpress-unified
+PYTHONPATH=. python3 -m pytest tests -q
+```
+
+---
+
+## English Overview
+
+### What this is
+
+This is a unified CLS telegraph skill for OpenClaw. It centralizes CLS access into one canonical interface and prevents downstream scripts from mixing raw telegraphs, highlighted/red items, hot items, page scraping, and local caches inconsistently.
+
+### Features
+
+- Unified access to CLS telegraph data
+- Canonical red/highlight detection based on `level`
+- Heat filtering based on `reading_num`
+- Stable normalized output schema for downstream consumers
+- CLI interface for terminal and skill-to-skill calls
+- Page fallback when the primary NodeAPI path fails
+
+### Canonical design
+
+#### Primary source
+- `https://www.cls.cn/nodeapi/telegraphList`
+
+#### Secondary source
+- `https://api3.cls.cn/share/article/{id}`
+
+#### Fallback source
+- `https://www.cls.cn/telegraph`
+
+#### Canonical rules
+- `level in {"A", "B"}` → red/highlighted
+- `level == "C"` → normal
+- `reading_num` → heat / reading count
+- `ctime` → publish timestamp
+- `shareurl` → article share URL
+
+### Usage
 
 ```bash
 python3 skills/cailianpress-unified/scripts/cls_query.py telegraph --hours 1 --limit 10
-```
-
-### Red/highlighted items
-
-```bash
 python3 skills/cailianpress-unified/scripts/cls_query.py red --hours 24 --format text
-```
-
-### Hot items
-
-```bash
 python3 skills/cailianpress-unified/scripts/cls_query.py hot --hours 1 --min-reading 10000 --format markdown
-```
-
-### Article lookup
-
-```bash
 python3 skills/cailianpress-unified/scripts/cls_query.py article --id 2326490 --format text
 ```
 
-## Output formats
-
-Supported output formats:
-- `json` (default): for programmatic use by other skills/scripts
-- `text`: for terminal / Telegram / plain text summaries
-- `markdown`: for documents and richer reports
-
-## Normalized schema
-
-### `ClsItem`
+### Normalized schema example
 
 ```json
 {
@@ -140,59 +164,10 @@ Supported output formats:
 }
 ```
 
-## Integration rules
+### Publishing notes
 
-Once adopted, other skills should not call CLS directly. They should use this skill through:
-- `scripts/cls_query.py`
-- or `scripts/cls_service.py`
-
-Examples of migration targets:
-- hourly pulse reports
-- red telegraph summaries
-- 1-hour / 24-hour CLS snapshots
-- stock-news aggregators that depend on CLS telegraphs
-
-## Known limitations
-
-- V1 focuses on telegraph data, not full article systems
-- Article detail extraction is HTML-based and may need future hardening
-- Page fallback depends on current page data structure and should be treated as backup only
-- Some telegraph items may have an empty `title` field from upstream CLS data
-
-## Testing
-
-If `pytest` is installed:
-
-```bash
-cd skills/cailianpress-unified
-PYTHONPATH=. python3 -m pytest tests -q
-```
-
-## Roadmap
-
-### V1
-- unified telegraph query
-- unified red query
-- unified hot query
-- article share URL and basic detail extraction
-- page fallback support
-
-### V1.1
-- stronger article detail parsing
-- better handling for title-less telegraphs
-- richer markdown output
-- migration guide for dependent skills
-
-### V2
-- caching layer
-- richer service API
-- observability and health checks
-- explicit adapter registry
-
-## Publishing checklist
-
-Before pushing to GitHub:
-- verify examples still work
-- run tests in an environment with `pytest`
-- confirm no local-only paths remain in docs
-- add a repository-level license if needed
+Before pushing or packaging, verify:
+- examples still match the real CLI behavior
+- no local-only paths leak into docs
+- tests are run in an environment with `pytest`
+- the repository-level `LICENSE` matches your intended publication policy
