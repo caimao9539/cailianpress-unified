@@ -15,7 +15,7 @@ A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a
 - 同一请求多次返回结果不同
 - 下游技能难以稳定复用
 
-### 当前能力（V1.1）
+### 当前能力（V1.2）
 
 - 普通电报查询
 - 加红电报查询
@@ -24,7 +24,7 @@ A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a
 - 页面兜底抓取
 - 统一 JSON / Text / Markdown 输出
 - SQLite 本地存储模式（推荐）
-- 原始抓取日志 + 去重主查询表
+- 原始抓取日志 + 原始层去重主表
 - 主题关联入库与主题归类查询
 
 ### 统一规则
@@ -50,24 +50,6 @@ A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a
 - `nodeapi/refreshTelegraphList` 仅返回轻量结构，不适合作为主抓取源
 - `/v1/roll/get_roll_list` 为前端主接口，但直接请求会返回 `签名错误`，因此当前不作为稳定抓取主线
 
-### 适用场景
-
-适合以下请求或下游技能调用：
-- 财联社过去 1 小时电报
-- 财联社过去 24 小时加红电报
-- 财联社热度前 10
-- 财联社文章详情
-- 任何依赖财联社电报流的晨报 / 盘中简报 / 快讯聚合
-
-### 快速使用
-
-```bash
-python3 skills/cailianpress-unified/scripts/cls_query.py telegraph --hours 1
-python3 skills/cailianpress-unified/scripts/cls_query.py red --hours 24 --format text
-python3 skills/cailianpress-unified/scripts/cls_query.py hot --hours 1 --min-reading 10000 --format markdown
-python3 skills/cailianpress-unified/scripts/cls_query.py article --id 2326490 --format text
-```
-
 ### SQLite 模式（推荐，当前默认每 10 分钟抓一次）
 
 ```bash
@@ -78,21 +60,46 @@ python3 skills/cailianpress-unified/scripts/cls_sqlite_query.py hot --hours 24 -
 python3 skills/cailianpress-unified/scripts/cls_sqlite_status.py
 ```
 
-### 当前存储结构
+### 当前存储结构（已升级）
 
-- **主查询库**：`skills/cailianpress-unified/data/telegraph.db`
-- **主表**：`telegraph_main`（去重后的唯一电报）
-- **原始日志表**：`telegraph_raw_log`（每轮抓取痕迹）
-- **主题关联表**：`telegraph_subjects`
-- **个股关联表**：`telegraph_stocks`
-- **板块关联表**：`telegraph_plates`
+- **主真相源表**：`telegraph_raw_main`
+  - 去重后的原始层主表
+  - 尽量保留 NodeAPI 原始字段与原始 JSON
+- **抓取日志表**：`telegraph_raw_log`
+  - 每轮抓取痕迹
+- **查询视图**：`v_telegraph_main`
+  - 供日常查询使用
+  - 在原始层基础上派生 `is_red` / `telegraph_type` / `published_at`
+- **关联表**：
+  - `telegraph_subjects`
+  - `telegraph_stocks`
+  - `telegraph_plates`
 
 ### 去重与更新规则
 
-- 主去重键：`id`
+- 原始层主去重键：`id`
 - 更新判断：优先 `modified_time`，其次 `content_hash`
 - 抓取日志保留每次采集痕迹
-- 主表只保留当前唯一版本
+- 查询默认走：`v_telegraph_main`
+
+### 原始层现在会保留的关键扩展字段
+
+除了常规电报正文和等级、阅读量外，主真相源还保留：
+- `tags_json`
+- `sub_titles_json`
+- `timeline_json`
+- `ad_json`
+- `assoc_fast_fact_json`
+- `assoc_article_url`
+- `assoc_video_title`
+- `assoc_video_url`
+- `assoc_credit_rating_json`
+- `stock_list_json`
+- `subjects_json`
+- `plate_list_json`
+- `raw_json`
+
+也就是说，当前已经从“精选主表”升级为“原始层去重主表”。
 
 ### 采集策略
 
@@ -100,7 +107,6 @@ python3 skills/cailianpress-unified/scripts/cls_sqlite_status.py
 - 设计目标：
   - 尽量不漏数
   - 通过去重消化重复抓取
-- 当前已验证：`telegraphList` 单次返回约 `20` 条，窗口覆盖时长会随消息密度变化
 
 详见：`docs/sqlite_mode.md`
 
@@ -146,19 +152,14 @@ skills/cailianpress-unified/
 - 当前稳定主抓取源仍是 `nodeapi` 链，不是签名保护的 `/v1/roll/get_roll_list`
 - `article` 详情解析目前基于 HTML 提取，后续还可继续增强
 - 某些财联社电报上游本身可能没有标题
-- 当前 SQLite 已稳定落入主表、raw log、主题关联；个股/板块显式关联仍可能因上游返回为空而较少
-
-### 测试
-
-如果环境里安装了 `pytest`：
-
-```bash
-cd skills/cailianpress-unified
-PYTHONPATH=. python3 -m pytest tests -q
-```
 
 ---
 
 ## English Overview
 
-This skill now supports a recommended SQLite mode with a raw ingest log and a deduplicated main query table. The stable direct data source is currently `nodeapi/telegraphList`. Use `cls_sqlite_ingest.py` on a schedule and query `telegraph_main` through `cls_sqlite_query.py` for stable hourly and daily CLS lookups.
+This skill now uses a raw-first SQLite architecture:
+- `telegraph_raw_main` as the deduplicated source-of-truth table
+- `telegraph_raw_log` as the ingest audit log
+- `v_telegraph_main` as the main query view for normal usage
+
+The stable direct source is currently `nodeapi/telegraphList`, and the recommended ingest cadence is 10 minutes.
