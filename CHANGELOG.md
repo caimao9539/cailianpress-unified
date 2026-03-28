@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.1 - 2026-03-28
+
+Documentation and storage update release.
+
+### Added
+- SQLite ingest mode with `telegraph_main` and `telegraph_raw_log`
+- SQLite query CLI and status CLI
+- Subject relationship storage
+- Documentation for stable NodeAPI-based ingestion
+- Documentation for current 10-minute ingest cadence
+
+### Changed
+- Switched recommended persistence model from JSONL-first to SQLite-first
+- Clarified current stable direct source as `nodeapi/telegraphList`
+- Clarified that `/v1/roll/get_roll_list` is signature-protected and not the current stable direct ingest path
+
 ## 0.1.0 - 2026-03-27
 
 Initial V1 release.
