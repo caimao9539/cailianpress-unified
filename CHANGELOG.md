@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.2 - 2026-03-29
+
+Current-version documentation sync release.
+
+### Added
+- Documentation for the current raw-first SQLite source-of-truth table `telegraph_raw_main`
+- Documentation for current red-record interpretation using `level in {A, B}`
+- SQLite usage note showing direct `sqlite3` inspection against the local database
+
+### Changed
+- Clarified that current live record counts may exceed the original 20-item hot cache because the canonical store is now `skills/cailianpress-unified/data/telegraph.db`
+- Clarified that `telegraph_raw_main` is the canonical raw record table and `v_telegraph_main` is the recommended query surface
+- Synced README / SKILL docs with the current observed database structure and query workflow
+
 ## 0.1.1 - 2026-03-28
 
 Documentation and storage update release.

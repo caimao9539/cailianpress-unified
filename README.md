@@ -15,7 +15,7 @@ A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a
 - 同一请求多次返回结果不同
 - 下游技能难以稳定复用
 
-### 当前能力（V1.2）
+### 当前能力（V1.2 / 2026-03-29 文档同步）
 
 - 普通电报查询
 - 加红电报查询
@@ -58,6 +58,8 @@ python3 skills/cailianpress-unified/scripts/cls_sqlite_query.py telegraph --hour
 python3 skills/cailianpress-unified/scripts/cls_sqlite_query.py red --hours 24 --limit 20
 python3 skills/cailianpress-unified/scripts/cls_sqlite_query.py hot --hours 24 --min-reading 50000 --limit 20
 python3 skills/cailianpress-unified/scripts/cls_sqlite_status.py
+sqlite3 skills/cailianpress-unified/data/telegraph.db "SELECT COUNT(*) FROM telegraph_raw_main;"
+sqlite3 skills/cailianpress-unified/data/telegraph.db "SELECT id, level, title FROM telegraph_raw_main WHERE level IN ('A','B') ORDER BY ctime DESC LIMIT 20;"
 ```
 
 ### 当前存储结构（已升级）
