@@ -84,6 +84,23 @@ sqlite3 skills/cailianpress-unified/data/telegraph.db "SELECT id, level, title F
 - 抓取日志保留每次采集痕迹
 - 查询默认走：`v_telegraph_main`
 
+### 数据库性能优化（已落地）
+
+当前 `telegraph_raw_main` 已确认保留以下关键索引：
+- `idx_raw_main_ctime`：加速最近时段查询 / 时间倒序查询
+- `idx_raw_main_level`：加速加红电报查询
+- `idx_raw_main_reading_num`：加速热度查询
+- `idx_raw_main_date_key`：支持日期维护与日期维度操作
+
+已执行的优化动作：
+- 确认 `ctime` 与 `level` 查询路径命中索引
+- 清理重复索引，避免写入时维护两套语义相同的索引
+
+索引维护规则：
+- 新增索引前先检查：`PRAGMA index_list('telegraph_raw_main')`
+- 避免创建仅名称不同、语义重复的索引
+- 索引变更后必须用 `EXPLAIN QUERY PLAN` 验证
+
 ### 原始层现在会保留的关键扩展字段
 
 除了常规电报正文和等级、阅读量外，主真相源还保留：

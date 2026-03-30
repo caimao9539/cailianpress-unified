@@ -113,3 +113,33 @@ This avoids losing useful fields too early.
 - inspect raw fidelity from `telegraph_raw_main.raw_json`
 - inspect ingest behavior from `telegraph_raw_log`
 - subject totals can exceed unique telegraph count because one telegraph can belong to multiple subjects
+
+## Index strategy
+
+Current performance-critical indexes on `telegraph_raw_main`:
+- `idx_raw_main_ctime`
+  - accelerates recent-window queries and time-desc scans
+- `idx_raw_main_level`
+  - accelerates red-record lookups using `level in ('A','B')`
+- `idx_raw_main_reading_num`
+  - accelerates hot/ranking lookups
+- `idx_raw_main_date_key`
+  - supports date-key based maintenance and date-bucket operations
+
+Recommended query patterns:
+- recent records: filter on `ctime`
+- red records: filter on `level`
+- hot records: filter/order on `reading_num`
+
+Index maintenance rule:
+- do not create duplicate semantic indexes with new names if an equivalent index already exists
+- before adding a new index, always inspect `PRAGMA index_list('telegraph_raw_main')`
+- after index changes, verify with `EXPLAIN QUERY PLAN`
+
+Example verification:
+
+```bash
+sqlite3 skills/cailianpress-unified/data/telegraph.db "PRAGMA index_list('telegraph_raw_main');"
+sqlite3 skills/cailianpress-unified/data/telegraph.db "EXPLAIN QUERY PLAN SELECT COUNT(*) FROM telegraph_raw_main WHERE ctime >= strftime('%s','2026-03-29 20:00:00');"
+sqlite3 skills/cailianpress-unified/data/telegraph.db "EXPLAIN QUERY PLAN SELECT COUNT(*) FROM telegraph_raw_main WHERE level IN ('A','B');"
+```

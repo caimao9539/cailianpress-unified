@@ -13,6 +13,7 @@ Current-version documentation sync release.
 - Clarified that current live record counts may exceed the original 20-item hot cache because the canonical store is now `skills/cailianpress-unified/data/telegraph.db`
 - Clarified that `telegraph_raw_main` is the canonical raw record table and `v_telegraph_main` is the recommended query surface
 - Synced README / SKILL docs with the current observed database structure and query workflow
+- Documented the current SQLite index strategy for `telegraph_raw_main`, including `ctime` / `level` query acceleration and duplicate-index avoidance rules
 
 ## 0.1.1 - 2026-03-28
 
