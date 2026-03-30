@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.4 - 2026-03-30
+
+CLS endpoint quick-reference documentation release.
+
+### Added
+- Documented which CLS endpoints are currently usable, limited, or signature-protected
+- Added recommended call path for production ingestion and detail completion
+
+### Changed
+- Synced README and API contract docs with the current endpoint strategy
+
 ## 0.1.3 - 2026-03-30
 
 SQLite index strategy documentation release.
