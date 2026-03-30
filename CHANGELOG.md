@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.5 - 2026-03-30
+
+Raw-log lifecycle policy release.
+
+### Added
+- Added `cls_prune_raw_log.py` for direct deletion of `telegraph_raw_log` rows older than 30 days
+- Documented the operational cron for daily raw-log pruning
+
+### Changed
+- Standardized the retention rule to keep `telegraph_raw_log` online for 30 days only, with direct deletion and no archive retention
+
 ## 0.1.4 - 2026-03-30
 
 CLS endpoint quick-reference documentation release.
