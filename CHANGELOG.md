@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3 - 2026-03-30
+
+SQLite index strategy documentation release.
+
+### Added
+- Documented current index strategy for `telegraph_raw_main`
+- Added query-plan verification examples for `ctime` and `level` lookups
+
+### Changed
+- Clarified duplicate-index cleanup rules and maintenance workflow
+- Synced README and SQLite mode docs with the actual production index layout
+
 ## 0.1.2 - 2026-03-29
 
 Current-version documentation sync release.
