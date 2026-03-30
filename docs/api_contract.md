@@ -47,3 +47,22 @@ Parameters:
 - `published_at`: normalized Asia/Shanghai datetime string
 - `shareurl`: article share URL
 - `raw_source`: adapter name used to produce the item
+
+## Endpoint quick reference
+
+| Endpoint | Status | Purpose | Notes |
+|---|---|---|---|
+| `https://www.cls.cn/nodeapi/telegraphList` | usable | primary telegraph list ingestion | current recommended main source |
+| `https://www.cls.cn/nodeapi/updateTelegraphList` | usable | update / incremental-like list retrieval | useful as helper, not primary source |
+| `https://api3.cls.cn/share/article/{id}` | usable | article/share detail resolution | suitable for detail completion |
+| `https://www.cls.cn/telegraph` | usable | page fallback | use only as HTML fallback |
+| `/v1/roll/get_roll_list` | not recommended | front-end main roll API | direct calls currently fail with `签名错误` |
+| `nodeapi/refreshTelegraphList` | limited | lightweight refresh payload | not suitable as the canonical ingest source |
+
+## Recommended call path
+
+1. Ingest telegraphs from `nodeapi/telegraphList`
+2. Optionally compare / assist with `nodeapi/updateTelegraphList`
+3. Resolve detail with `api3.cls.cn/share/article/{id}`
+4. Use `www.cls.cn/telegraph` only as fallback
+5. Do not route production ingestion through `/v1/roll/get_roll_list`

@@ -50,6 +50,24 @@ A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a
 - `nodeapi/refreshTelegraphList` 仅返回轻量结构，不适合作为主抓取源
 - `/v1/roll/get_roll_list` 为前端主接口，但直接请求会返回 `签名错误`，因此当前不作为稳定抓取主线
 
+### 财联社接口速查表
+
+| 接口 | 当前状态 | 主要用途 | 建议 |
+|---|---|---|---|
+| `https://www.cls.cn/nodeapi/telegraphList` | ✅ 可用 | 拉电报主列表 | **主抓取源** |
+| `https://www.cls.cn/nodeapi/updateTelegraphList` | ✅ 可访问 | 增量/刷新类列表 | **辅助源** |
+| `https://api3.cls.cn/share/article/{id}` | ✅ 可用 | 文章详情分享页 | **详情补全/兜底** |
+| `https://www.cls.cn/telegraph` | ✅ 可访问 | 网页列表页 | **页面兜底抓取** |
+| `/v1/roll/get_roll_list` | ❌ 不建议直调 | 前端主电报接口 | **会报签名错误** |
+| `nodeapi/refreshTelegraphList` | ⚠️ 可访问但不适合作主源 | 轻量刷新数据 | **仅参考** |
+
+推荐调用策略：
+- 主抓取：`nodeapi/telegraphList`
+- 辅助刷新：`nodeapi/updateTelegraphList`
+- 详情补全：`api3.cls.cn/share/article/{id}`
+- 页面兜底：`www.cls.cn/telegraph`
+- 不要把签名受保护的 `/v1/roll/get_roll_list` 当当前稳定主线
+
 ### SQLite 模式（推荐，当前默认每 10 分钟抓一次）
 
 ```bash

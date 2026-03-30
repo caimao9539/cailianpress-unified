@@ -11,6 +11,7 @@ SQLite index strategy documentation release.
 ### Changed
 - Clarified duplicate-index cleanup rules and maintenance workflow
 - Synced README and SQLite mode docs with the actual production index layout
+- Added a CLS endpoint quick-reference table covering usable NodeAPI paths, detail resolution paths, fallback pages, and signature-protected interfaces to avoid
 
 ## 0.1.2 - 2026-03-29
 
