@@ -68,7 +68,7 @@ A unified Cailian Press (CLS / 财联社) data skill for OpenClaw. It provides a
 - 页面兜底：`www.cls.cn/telegraph`
 - 不要把签名受保护的 `/v1/roll/get_roll_list` 当当前稳定主线
 
-### SQLite 模式（推荐，当前默认每 10 分钟抓一次）
+### SQLite 模式（推荐，当前默认每 5 分钟抓一次）
 
 ```bash
 python3 skills/cailianpress-unified/scripts/cls_sqlite_ingest.py
@@ -119,6 +119,12 @@ sqlite3 skills/cailianpress-unified/data/telegraph.db "SELECT id, level, title F
 - 避免创建仅名称不同、语义重复的索引
 - 索引变更后必须用 `EXPLAIN QUERY PLAN` 验证
 
+### raw log 生命周期策略
+
+- `telegraph_raw_log` 只作为在线审计层保留最近 `30` 天
+- 超过 `30` 天的 raw log 记录直接删除，不做压缩归档
+- 推荐每日凌晨运行清理脚本：`python3 skills/cailianpress-unified/scripts/cls_prune_raw_log.py`
+
 ### 原始层现在会保留的关键扩展字段
 
 除了常规电报正文和等级、阅读量外，主真相源还保留：
@@ -140,10 +146,12 @@ sqlite3 skills/cailianpress-unified/data/telegraph.db "SELECT id, level, title F
 
 ### 采集策略
 
-- 当前默认频率：**每 10 分钟一次**
+- 当前默认频率：**每 5 分钟一次**
 - 设计目标：
   - 尽量不漏数
   - 通过去重消化重复抓取
+- 2026-03-30 实测：当前 `telegraphList` 单次返回 **20 条**，时间覆盖窗口约 **21.87 分钟**（样本：`21:28:20 → 21:50:12`）
+- 由此推断：在当前接口行为下，**5 分钟抓取明显比 10 分钟更稳**；10 分钟在活跃时段存在更高漏数风险
 
 详见：`docs/sqlite_mode.md`
 
@@ -199,4 +207,4 @@ This skill now uses a raw-first SQLite architecture:
 - `telegraph_raw_log` as the ingest audit log
 - `v_telegraph_main` as the main query view for normal usage
 
-The stable direct source is currently `nodeapi/telegraphList`, and the recommended ingest cadence is 10 minutes.
+The stable direct source is currently `nodeapi/telegraphList`, and the recommended ingest cadence is 5 minutes.

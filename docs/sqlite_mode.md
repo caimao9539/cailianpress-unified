@@ -13,6 +13,7 @@ This mode upgrades local CLS persistence into a raw-first SQLite model.
 - `telegraph_raw_log`
   - keeps every capture event
   - used for replay, audit, and debugging
+  - current lifecycle policy: keep online for `30 days`, then delete directly (no archive retention)
 
 ### Query surface
 - `v_telegraph_main`
@@ -32,7 +33,7 @@ This mode upgrades local CLS persistence into a raw-first SQLite model.
 
 ## Current recommended cadence
 
-Default: every 10 minutes.
+Default: every 5 minutes.
 
 ## Stable direct source
 
@@ -40,9 +41,21 @@ Current stable direct source:
 - `https://www.cls.cn/nodeapi/telegraphList`
 
 Current constraints:
-- single request usually returns about `20` telegraphs
+- single request currently returns about `20` telegraphs
 - effective time coverage changes with news density
 - direct use of `/v1/roll/get_roll_list` is blocked by signature validation (`签名错误`)
+
+## 2026-03-30 live measurement
+
+Current direct measurement using the project adapter (`fetch_telegraph_list`) shows:
+- returned rows: `20`
+- latest `ctime`: `2026-03-30 21:50:12`
+- earliest `ctime`: `2026-03-30 21:28:20`
+- effective single-batch span: about `21.87 minutes`
+
+Practical implication:
+- `5-minute` ingest is currently the safer default
+- `10-minute` ingest has materially higher miss risk during active windows because the overlap margin is much smaller
 
 ## Ingest command
 
@@ -97,7 +110,8 @@ This avoids losing useful fields too early.
 ## Suggested cron
 
 ```cron
-*/10 * * * * cd /home/tim/.openclaw/workspace && python3 skills/cailianpress-unified/scripts/cls_sqlite_ingest.py >> /tmp/cls_sqlite_ingest.log 2>&1
+*/5 * * * * cd /home/tim/.openclaw/workspace && python3 skills/cailianpress-unified/scripts/cls_sqlite_ingest.py >> /tmp/cls_sqlite_ingest.log 2>&1
+17 3 * * * cd /home/tim/.openclaw/workspace && python3 skills/cailianpress-unified/scripts/cls_prune_raw_log.py >> /tmp/cls_prune_raw_log.log 2>&1
 ```
 
 ## Dedup strategy

@@ -5,6 +5,13 @@
 CLS endpoint quick-reference documentation release.
 
 ### Added
+- Recorded a live `telegraphList` measurement showing `20` rows per batch and an effective single-batch span of about `21.87 minutes`
+
+### Changed
+- Updated the recommended SQLite ingest cadence from `10 minutes` to `5 minutes` based on the live window measurement
+- Added a raw-log lifecycle rule: keep `telegraph_raw_log` online for `30 days`, then delete directly without archive retention
+
+### Added
 - Documented which CLS endpoints are currently usable, limited, or signature-protected
 - Added recommended call path for production ingestion and detail completion
 
